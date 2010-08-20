@@ -7,17 +7,11 @@
 ## If -t (todo) is given, prints packages that need to switch to the current ruby version.
 
 require 'rip/script'
+require 'rip/ext'
 
 list = ARGV.delete('-l') || ARGV.delete('--list')
 todo = ARGV.delete('-t') || ARGV.delete('--todo')
 interactive = ARGV.delete('-i')
-
-def ruby_version(pkg)
-  File.read(pkg+'/build.rip').chomp
-rescue Errno::ENOENT
-  warn "Package `#{basename(pkg)}' is missing build.rip and needs to be rebuilt"
-  nil
-end
 
 def find_symlink_parent(file)
   while parent = File.dirname(file)
@@ -37,23 +31,6 @@ def ask_to_build(to_build)
   print "Proceed? [y]/n "
   answer = $stdin.gets.chomp
   answer == '' || answer[/^y/]
-end
-
-def current_version_path(path)
-  "#{path}/.versions/#{Rip.md5(Rip.ruby)}"
-end
-
-def ext_build(package_path, version_path)
-  tmp_dir = "#{package_path}/.versions/#{basename(package_path)}"
-  cp_r version_path, tmp_dir
-  rm_f Dir[tmp_dir+'/**/*.bundle']
-  puts "Building extensions for #{basename(package_path)[/\w+/]} ..."
-  built_path = rip('package-build', tmp_dir)
-  rm_rf tmp_dir
-  raise "No extconf.rb found to build." if built_path == tmp_dir
-  mv built_path, current_version_path(package_path)
-rescue
-  warn "Unexpected error while building #{basename(package_path)}: #{$!}"
 end
 
 def each_package(env_packages)
@@ -97,12 +74,11 @@ if todo || list
   end
 else
   each_package(env_packages) do |path|
-    version_path = "#{path}/.versions/#{Rip.md5(ruby_version(path))}"
-    rip("ext-init", path) unless File.exists? version_path
+    rip("ext-init", path) unless File.exists? version_path(path)
     new_version_path = current_version_path(path)
 
     if !File.exist?(new_version_path) && (interactive ? answer : true)
-      ext_build(path, version_path)
+      rip("ext-build", path)
     end
 
     if File.exist? new_version_path
