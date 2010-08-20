@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+## Usage: rip-ext-build PACKAGE_PATH
+##
+## Builds a version package for the current Rip.ruby
 
 require 'rip/script'
 require 'rip/ext'
@@ -7,14 +10,14 @@ abort "No package path given" unless (package_path = ARGV[0])
 
 begin
   tmp_dir = "#{package_path}/.versions/#{basename(package_path)}"
-  cp_r version_path(package_path), tmp_dir
+  cp_r active_version_path(package_path), tmp_dir
   rm_f Dir[tmp_dir+'/**/*.bundle']
   rm_rf tmp_dir +'/.versions'
   info "Building extensions for #{name_from_path(package_path)} ..."
   built_path = rip('package-build', tmp_dir)
   rm_rf tmp_dir
   raise "No extconf.rb found to build." if built_path == tmp_dir
-  mv built_path, current_version_path(package_path)
+  mv built_path, current_ruby_version_path(package_path)
 rescue
   warn "Error while building #{basename(package_path)}: #{$!}"
 end

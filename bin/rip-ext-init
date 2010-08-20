@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 ## Usage: rip-ext-init PACKAGE_PATH
+##
+## Initializes package to have a .versions/ subdirectory and symlinks to proper
+## active version path
 
 require 'rip/script'
 

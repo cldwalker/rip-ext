@@ -62,7 +62,7 @@ env_packages.each {|k,v|
 answer = nil
 if interactive
   to_build = env_packages.values.flatten.uniq.select {|e|
-    !File.directory?(current_version_path(e))
+    !File.directory?(current_ruby_version_path(e))
   }
   answer = to_build.size.zero? || ask_to_build(to_build)
 end
@@ -74,8 +74,8 @@ if todo || list
   end
 else
   each_package(env_packages) do |path|
-    rip("ext-init", path) unless File.exists? version_path(path)
-    new_version_path = current_version_path(path)
+    rip("ext-init", path) unless File.exists? active_version_path(path)
+    new_version_path = current_ruby_version_path(path)
 
     if !File.exist?(new_version_path) && (interactive ? answer : true)
       rip("ext-build", path)

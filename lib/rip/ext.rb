@@ -1,8 +1,8 @@
-def current_version_path(path)
+def current_ruby_version_path(path)
   "#{path}/.versions/#{Rip.md5(Rip.ruby)}"
 end
 
-def version_path(path)
+def active_version_path(path)
   "#{path}/.versions/#{Rip.md5(ruby_version(path))}"
 end
 
