@@ -9,6 +9,7 @@ begin
   tmp_dir = "#{package_path}/.versions/#{basename(package_path)}"
   cp_r version_path(package_path), tmp_dir
   rm_f Dir[tmp_dir+'/**/*.bundle']
+  rm_rf tmp_dir +'/.versions'
   info "Building extensions for #{name_from_path(package_path)} ..."
   built_path = rip('package-build', tmp_dir)
   rm_rf tmp_dir
