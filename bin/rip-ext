@@ -1,0 +1,114 @@
+#!/usr/bin/env ruby
+## Usage: rip-ext [-l] [-i] PACKAGE_PATH
+##
+## Builds and installs packages with extensions for the current ruby version
+## If -i is given, switches packages and prompts user if package need building.
+## If -l (list) is given, prints active packages built for the current ruby version.
+## If -t (todo) is given, prints packages that need to switch to the current ruby version.
+
+require 'rip/script'
+
+list = ARGV.delete('-l') || ARGV.delete('--list')
+todo = ARGV.delete('-t') || ARGV.delete('--todo')
+interactive = ARGV.delete('-i')
+
+def ruby_version(pkg)
+  File.read(pkg+'/build.rip').chomp
+rescue Errno::ENOENT
+  warn "Package `#{basename(pkg)}' is missing build.rip and needs to be rebuilt"
+  nil
+end
+
+def find_symlink_parent(file)
+  while parent = File.dirname(file)
+    return parent if File.symlink?(parent)
+    return nil if parent == '/'
+    file = parent
+  end
+end
+
+def read_embedded_symlink(file)
+  (parent = find_symlink_parent(file)) && file.sub(parent, File.readlink(parent))
+end
+
+def ask_to_build(to_build)
+  to_build_list = to_build.map {|e| basename(e)[/\w+/] }.join(', ')
+  puts "#{to_build.size} package(s) have extensions to build for this ruby version: #{to_build_list}"
+  print "Proceed? [y]/n "
+  answer = $stdin.gets.chomp
+  answer == '' || answer[/^y/]
+end
+
+def current_version_path(path)
+  "#{path}/.versions/#{Rip.md5(Rip.ruby)}"
+end
+
+def ext_build(package_path, version_path)
+  tmp_dir = "#{package_path}/.versions/#{basename(package_path)}"
+  cp_r version_path, tmp_dir
+  rm_f Dir[tmp_dir+'/**/*.bundle']
+  puts "Building extensions for #{basename(package_path)[/\w+/]} ..."
+  built_path = rip(:build, tmp_dir)
+  rm_rf tmp_dir
+  raise "No extconf.rb found to build." if built_path == tmp_dir
+  mv built_path, current_version_path(package_path)
+rescue
+  warn "Unexpected error while building #{basename(package_path)}: #{$!}"
+end
+
+def each_package(env_packages)
+  env_packages.each do |env, paths|
+    ENV['RIPENV'] = env
+    paths.each {|e| yield(e) }
+  end
+end
+
+# find built packages by env
+env_packages = Dir[Rip.dir+'/**/*/**/*.bundle'].inject({}) {|acc,e|
+  if (env = e[/^#{Rip.dir}\/([^\/]+)/, 1]) && env != 'active'
+    realfile = File.symlink?(e) ? File.readlink(e) : read_embedded_symlink(e)
+    if (pkg = realfile.to_s[/^(#{Rip.packages}\/[^\/]+)/, 1])
+      (acc[env] ||= []) << pkg
+    end
+  end
+  acc
+}
+
+# keep packages that do or don't match current ruby version
+env_packages.each {|k,v|
+  v.replace v.uniq.select {|e|
+    (version = ruby_version(e)) &&
+    (list ? version == Rip.ruby : version != Rip.ruby)
+  }
+}
+
+answer = nil
+if interactive
+  to_build = env_packages.values.flatten.uniq.select {|e|
+    !File.directory?(current_version_path(e))
+  }
+  answer = to_build.size.zero? || ask_to_build(to_build)
+end
+
+
+if todo || list
+  each_package(env_packages) do |path|
+    puts path
+  end
+else
+  each_package(env_packages) do |path|
+    version_path = "#{path}/.versions/#{Rip.md5(ruby_version(path))}"
+    rip("ext-init", path) unless File.exists? version_path
+    new_version_path = current_version_path(path)
+
+    if !File.exist?(new_version_path) && (interactive ? answer : true)
+      ext_build(path, version_path)
+    end
+
+    if File.exist? new_version_path
+      top_level = Dir["#{new_version_path}/{bin,lib,man,build.rip}"]
+      ln_s top_level, path, :force=>true
+      debug "Linked package `#{basename(path)}' to current ruby version"
+    end
+  end
+end

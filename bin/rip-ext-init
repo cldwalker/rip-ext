@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+## Usage: rip-ext-init PACKAGE_PATH
+
+require 'rip/script'
+
+abort "Need a package" unless !(package_path = ARGV[0]).empty?
+
+build_rip = package_path+'/build.rip'
+abort "Package requires a build.rip" if !File.exists? build_rip
+
+new_dir = "#{package_path}/.versions/#{Rip.md5(File.read(build_rip).chomp)}"
+mkdir_p new_dir
+cp_r package_path, package_path+'.tmp'
+File.rename package_path+'.tmp', new_dir
+
+rm_rf Dir["#{package_path}/{bin,lib,man,build.rip}"]
+ln_s Dir["#{new_dir}/{bin,lib,man,build.rip}"], package_path
+
+puts new_dir
