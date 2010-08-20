@@ -48,7 +48,7 @@ def ext_build(package_path, version_path)
   cp_r version_path, tmp_dir
   rm_f Dir[tmp_dir+'/**/*.bundle']
   puts "Building extensions for #{basename(package_path)[/\w+/]} ..."
-  built_path = rip(:build, tmp_dir)
+  built_path = rip('package-build', tmp_dir)
   rm_rf tmp_dir
   raise "No extconf.rb found to build." if built_path == tmp_dir
   mv built_path, current_version_path(package_path)
