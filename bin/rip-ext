@@ -1,10 +1,12 @@
 #!/usr/bin/env ruby
-## Usage: rip-ext [-l] [-i] PACKAGE_PATH
+## Usage: rip-ext [-l] [-i] [-t] [-r]
 ##
-## Builds and installs packages with extensions for the current ruby version
-## If -i is given, switches packages and prompts user if package need building.
+## Builds and installs packages with extensions for the current ruby version.
+## By default only builds packages that don't exist for the current ruby version.
+## If -i is given, switches packages and prompts user if any packages need building.
 ## If -l (list) is given, prints active packages built for the current ruby version.
 ## If -t (todo) is given, prints packages that need to switch to the current ruby version.
+## If -r (rebuild) is given, all packages are rebuilt for the current version.
 
 require 'rip/script'
 require 'rip/ext'
@@ -12,6 +14,7 @@ require 'rip/ext'
 list = ARGV.delete('-l') || ARGV.delete('--list')
 todo = ARGV.delete('-t') || ARGV.delete('--todo')
 interactive = ARGV.delete('-i')
+rebuild = ARGV.delete('-r') || ARGV.delete('--rebuild')
 
 def find_symlink_parent(file)
   while parent = File.dirname(file)
@@ -55,7 +58,7 @@ env_packages = Dir[Rip.dir+'/**/*/**/*.bundle'].inject({}) {|acc,e|
 env_packages.each {|k,v|
   v.replace v.uniq.select {|e|
     (version = ruby_version(e)) &&
-    (list ? version == Rip.ruby : version != Rip.ruby)
+    (rebuild || (list ? version == Rip.ruby : version != Rip.ruby))
   }
 }
 
@@ -77,7 +80,7 @@ else
     rip("ext-init", path) unless File.exists? active_version_path(path)
     new_version_path = current_ruby_version_path(path)
 
-    if !File.exist?(new_version_path) && (interactive ? answer : true)
+    if rebuild || (!File.exist?(new_version_path) && (interactive ? answer : true))
       rip("ext-build", path)
     end
 
