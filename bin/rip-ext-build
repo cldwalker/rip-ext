@@ -17,7 +17,9 @@ begin
   built_path = rip('package-build', tmp_dir)
   rm_rf tmp_dir
   raise "No extconf.rb found to build." if built_path == tmp_dir
-  mv built_path, current_ruby_version_path(package_path)
+  new_version_path = current_ruby_version_path(package_path)
+  rm_rf new_version_path if File.exists?(new_version_path)
+  mv built_path, new_version_path
 rescue
   warn "Error while building #{basename(package_path)}: #{$!}"
 end
