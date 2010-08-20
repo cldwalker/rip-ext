@@ -12,3 +12,7 @@ rescue Errno::ENOENT
   warn "Package `#{basename(pkg)}' is missing build.rip and needs to be rebuilt"
   nil
 end
+
+def name_from_path(path)
+  path[/([^\/]+?)-.{32}$/, 1]
+end
