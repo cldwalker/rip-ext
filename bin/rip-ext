@@ -16,18 +16,6 @@ todo = ARGV.delete('-t') || ARGV.delete('--todo')
 interactive = ARGV.delete('-i')
 rebuild = ARGV.delete('-r') || ARGV.delete('--rebuild')
 
-def find_symlink_parent(file)
-  while parent = File.dirname(file)
-    return parent if File.symlink?(parent)
-    return nil if parent == '/'
-    file = parent
-  end
-end
-
-def read_embedded_symlink(file)
-  (parent = find_symlink_parent(file)) && file.sub(parent, File.readlink(parent))
-end
-
 def ask_to_build(to_build)
   to_build_list = to_build.map {|e| name_from_path e }.join(', ')
   puts "#{to_build.size} package(s) have extensions to build for this ruby version: #{to_build_list}"
@@ -43,17 +31,7 @@ def each_package(env_packages)
   end
 end
 
-# find built packages by env
-env_packages = Dir[Rip.dir+'/**/*/**/*.bundle'].inject({}) {|acc,e|
-  if (env = e[/^#{Rip.dir}\/([^\/]+)/, 1]) && env != 'active'
-    realfile = File.symlink?(e) ? File.readlink(e) : read_embedded_symlink(e)
-    if (pkg = realfile.to_s[/^(#{Rip.packages}\/[^\/]+)/, 1])
-      (acc[env] ||= []) << pkg
-    end
-  end
-  acc
-}
-
+env_packages = find_extension_packages
 # keep packages that do or don't match current ruby version
 env_packages.each {|k,v|
   v.replace v.uniq.select {|e|
