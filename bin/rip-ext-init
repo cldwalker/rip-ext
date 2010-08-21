@@ -5,13 +5,12 @@
 ## active version path
 
 require 'rip/script'
+require 'rip/ext'
 
-abort "Need a package" unless !(package_path = ARGV[0]).empty?
+abort "Need a package" if (package_path = ARGV[0]).to_s.empty?
+abort if ruby_version(package_path).nil?
 
-build_rip = package_path+'/build.rip'
-abort "Package requires a build.rip" if !File.exists? build_rip
-
-new_dir = "#{package_path}/.versions/#{Rip.md5(File.read(build_rip).chomp)}"
+new_dir = active_version_path(package_path)
 mkdir_p new_dir
 cp_r package_path, package_path+'.tmp'
 File.rename package_path+'.tmp', new_dir
