@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-## Usage: rip-ext-build PACKAGE_PATH
-##
-## Builds a version package for the current Rip.ruby
+# Usage: rip-ext-build PACKAGE_PATH
+#
+# Builds a version package for the current Rip.ruby
 
 require 'rip/script'
 require 'rip/ext'

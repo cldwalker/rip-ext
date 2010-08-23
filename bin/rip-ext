@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
-## Usage: rip-ext [-l] [-i] [-t] [-r]
-##
-## Builds and installs packages with extensions for the current ruby version.
-## By default only builds packages that don't exist for the current ruby version.
-## If -i is given, switches packages and prompts user if any packages need building.
-## If -l (list) is given, prints active packages built for the current ruby version.
-## If -t (todo) is given, prints packages that need to switch to the current ruby version.
-## If -r (rebuild) is given, all packages are rebuilt for the current version.
+# Usage: rip-ext [-l] [-i] [-t] [-r]
+#
+# Builds and installs packages with extensions for the current ruby version.
+# By default only builds packages that don't exist for the current ruby version.
+# If -i is given, switches packages and prompts user if any packages need building.
+# If -l (list) is given, prints active packages built for the current ruby version.
+# If -t (todo) is given, prints packages that need to switch to the current ruby version.
+# If -r (rebuild) is given, all packages are rebuilt for the current version.
 
 require 'rip/script'
 require 'rip/ext'
